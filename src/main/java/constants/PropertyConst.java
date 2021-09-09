@@ -2,6 +2,7 @@ package constants;
 
 public enum PropertyConst {
 
+
     PEPPER("pepper");
 
     private final String text;
@@ -12,5 +13,4 @@ public enum PropertyConst {
     public String getValue() {
         return this.text;
     }
-
 }
