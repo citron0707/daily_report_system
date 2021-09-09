@@ -1,3 +1,4 @@
+
 package actions;
 
 import java.io.IOException;
@@ -15,10 +16,12 @@ import constants.AttributeConst;
 import constants.ForwardConst;
 import constants.PropertyConst;
 
+
 public abstract class ActionBase {
     protected ServletContext context;
     protected HttpServletRequest request;
     protected HttpServletResponse response;
+
 
     public void init(
             ServletContext servletContext,
@@ -38,6 +41,7 @@ public abstract class ActionBase {
 
         Method commandMethod;
         try {
+
             String command = request.getParameter(ForwardConst.CMD.getValue());
 
             commandMethod = this.getClass().getDeclaredMethod(command, new Class[0]);
@@ -51,6 +55,7 @@ public abstract class ActionBase {
         }
 
     }
+
 
     protected void forward(ForwardConst target) throws ServletException, IOException {
 
@@ -95,6 +100,7 @@ public abstract class ActionBase {
         return request.getSession().getId();
     }
 
+
     protected int getPage() {
         int page;
         page = toNumber(request.getParameter(AttributeConst.PAGE.getValue()));
@@ -103,6 +109,7 @@ public abstract class ActionBase {
         }
         return page;
     }
+
 
     protected int toNumber(String strNumber) {
         int number = 0;
@@ -114,12 +121,14 @@ public abstract class ActionBase {
         return number;
     }
 
+
     protected LocalDate toLocalDate(String strDate) {
         if (strDate == null || strDate.equals("")) {
             return LocalDate.now();
         }
         return LocalDate.parse(strDate);
     }
+
 
     protected String getRequestParam(AttributeConst key) {
         return request.getParameter(key.getValue());
@@ -130,6 +139,7 @@ public abstract class ActionBase {
         request.setAttribute(key.getValue(), value);
     }
 
+
     @SuppressWarnings("unchecked")
     protected <R> R getSessionScope(AttributeConst key) {
         return (R) request.getSession().getAttribute(key.getValue());
@@ -139,6 +149,7 @@ public abstract class ActionBase {
     protected <V> void putSessionScope(AttributeConst key, V value) {
         request.getSession().setAttribute(key.getValue(), value);
     }
+
 
     protected void removeSessionScope(AttributeConst key) {
         request.getSession().removeAttribute(key.getValue());

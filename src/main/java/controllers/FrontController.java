@@ -34,6 +34,7 @@ public class FrontController extends HttpServlet {
     }
 
 
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         doGet(request, response);
@@ -56,6 +57,7 @@ public class FrontController extends HttpServlet {
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | SecurityException
                 | IllegalArgumentException | InvocationTargetException| NoSuchMethodException e) {
+
 
             action = new UnknownAction();
         }
