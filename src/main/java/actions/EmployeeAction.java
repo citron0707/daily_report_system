@@ -1,3 +1,4 @@
+
 package actions;
 
 import java.io.IOException;
@@ -13,9 +14,11 @@ import constants.MessageConst;
 import constants.PropertyConst;
 import services.EmployeeService;
 
+
 public class EmployeeAction extends ActionBase {
 
     private EmployeeService service;
+
 
     @Override
     public void process() throws ServletException, IOException {
@@ -23,45 +26,53 @@ public class EmployeeAction extends ActionBase {
         service = new EmployeeService();
 
         invoke();
-        service.close();
 
+        service.close();
     }
+
 
     public void index() throws ServletException, IOException {
-        int page = getPage();
-        List<EmployeeView> employees = service.getPerPage(page);
 
-        long employeeCount = service.countAll();
+        if (checkAdmin()) {
 
-        putRequestScope(AttributeConst.EMPLOYEES, employees);
-        putRequestScope(AttributeConst.EMP_COUNT, employeeCount);
-        putRequestScope(AttributeConst.PAGE, page);
-        putRequestScope(AttributeConst.MAX_ROW, JpaConst.ROW_PER_PAGE);
+            int page = getPage();
+            List<EmployeeView> employees = service.getPerPage(page);
 
-        String flush = getSessionScope(AttributeConst.FLUSH);
-        if(flush != null) {
-            putRequestScope(AttributeConst.FLUSH, flush);
-            removeSessionScope(AttributeConst.FLUSH);
+            long employeeCount = service.countAll();
+
+            putRequestScope(AttributeConst.EMPLOYEES, employees);
+            putRequestScope(AttributeConst.EMP_COUNT, employeeCount);
+            putRequestScope(AttributeConst.PAGE, page);
+            putRequestScope(AttributeConst.MAX_ROW, JpaConst.ROW_PER_PAGE);
+
+            String flush = getSessionScope(AttributeConst.FLUSH);
+            if (flush != null) {
+                putRequestScope(AttributeConst.FLUSH, flush);
+                removeSessionScope(AttributeConst.FLUSH);
+            }
+
+
+            forward(ForwardConst.FW_EMP_INDEX);
+
         }
 
-        forward(ForwardConst.FW_EMP_INDEX);
-
-
     }
+
 
     public void entryNew() throws ServletException, IOException {
 
-        putRequestScope(AttributeConst.TOKEN, getTokenId()); //CSRF対策用トークン
-        putRequestScope(AttributeConst.EMPLOYEE, new EmployeeView()); //空の従業員インスタンス
+        if (checkAdmin()) {
+            putRequestScope(AttributeConst.TOKEN, getTokenId());
+            putRequestScope(AttributeConst.EMPLOYEE, new EmployeeView());
 
-
-        forward(ForwardConst.FW_EMP_NEW);
+            forward(ForwardConst.FW_EMP_NEW);
+        }
     }
 
 
     public void create() throws ServletException, IOException {
 
-        if (checkToken()) {
+        if (checkAdmin() && checkToken()) {
 
             EmployeeView ev = new EmployeeView(
                     null,
@@ -74,7 +85,6 @@ public class EmployeeAction extends ActionBase {
                     AttributeConst.DEL_FLAG_FALSE.getIntegerValue());
 
             String pepper = getContextScope(PropertyConst.PEPPER);
-
 
             List<String> errors = service.create(ev, pepper);
 
@@ -94,44 +104,53 @@ public class EmployeeAction extends ActionBase {
             }
 
         }
-
     }
+
 
     public void show() throws ServletException, IOException {
 
-        EmployeeView ev = service.findOne(toNumber(getRequestParam(AttributeConst.EMP_ID)));
+        if (checkAdmin()) {
 
-        if (ev == null || ev.getDeleteFlag() == AttributeConst.DEL_FLAG_TRUE.getIntegerValue()) {
+            EmployeeView ev = service.findOne(toNumber(getRequestParam(AttributeConst.EMP_ID)));
 
-            forward(ForwardConst.FW_ERR_UNKNOWN);
-            return;
+            if (ev == null || ev.getDeleteFlag() == AttributeConst.DEL_FLAG_TRUE.getIntegerValue()) {
+
+                forward(ForwardConst.FW_ERR_UNKNOWN);
+                return;
+            }
+
+            putRequestScope(AttributeConst.EMPLOYEE, ev);
+
+            forward(ForwardConst.FW_EMP_SHOW);
         }
 
-        putRequestScope(AttributeConst.EMPLOYEE, ev);
-
-        forward(ForwardConst.FW_EMP_SHOW);
     }
+
 
     public void edit() throws ServletException, IOException {
 
-        EmployeeView ev = service.findOne(toNumber(getRequestParam(AttributeConst.EMP_ID)));
+        if (checkAdmin()) {
 
-        if (ev == null || ev.getDeleteFlag() == AttributeConst.DEL_FLAG_TRUE.getIntegerValue()) {
+            EmployeeView ev = service.findOne(toNumber(getRequestParam(AttributeConst.EMP_ID)));
 
-            forward(ForwardConst.FW_ERR_UNKNOWN);
-            return;
+            if (ev == null || ev.getDeleteFlag() == AttributeConst.DEL_FLAG_TRUE.getIntegerValue()) {
+
+                forward(ForwardConst.FW_ERR_UNKNOWN);
+                return;
+            }
+
+            putRequestScope(AttributeConst.TOKEN, getTokenId());
+            putRequestScope(AttributeConst.EMPLOYEE, ev);
+
+            forward(ForwardConst.FW_EMP_EDIT);
+
         }
-
-        putRequestScope(AttributeConst.TOKEN, getTokenId());
-        putRequestScope(AttributeConst.EMPLOYEE, ev);
-
-        forward(ForwardConst.FW_EMP_EDIT);
-
     }
+
 
     public void update() throws ServletException, IOException {
 
-        if (checkToken()) {
+        if (checkAdmin() && checkToken()) {
             EmployeeView ev = new EmployeeView(
                     toNumber(getRequestParam(AttributeConst.EMP_ID)),
                     getRequestParam(AttributeConst.EMP_CODE),
@@ -161,9 +180,10 @@ public class EmployeeAction extends ActionBase {
             }
         }
     }
+
     public void destroy() throws ServletException, IOException {
 
-        if (checkToken()) {
+        if (checkAdmin() && checkToken()) {
 
             service.destroy(toNumber(getRequestParam(AttributeConst.EMP_ID)));
 
@@ -173,6 +193,21 @@ public class EmployeeAction extends ActionBase {
         }
     }
 
+
+    private boolean checkAdmin() throws ServletException, IOException {
+
+        EmployeeView ev = (EmployeeView) getSessionScope(AttributeConst.LOGIN_EMP);
+
+        if (ev.getAdminFlag() != AttributeConst.ROLE_ADMIN.getIntegerValue()) {
+
+            forward(ForwardConst.FW_ERR_UNKNOWN);
+            return false;
+
+        } else {
+
+            return true;
+        }
+
+    }
+
 }
-
-
